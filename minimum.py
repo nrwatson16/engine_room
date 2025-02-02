@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Basic page config must come first
-st.set_page_config(page_title="Engine Room", layout="wide")
+st.set_page_config(page_title="Training Calendar", layout="wide")
 
 # Import other required libraries
 import requests
@@ -12,6 +12,7 @@ import os
 import urllib3
 import calendar
 from calendar import monthcalendar, month_name
+from urllib.parse import quote
 
 # Disable SSL warning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -25,28 +26,23 @@ STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
-
-
-# Get the deployment URL dynamically
-def get_base_url():
-    if 'DEPLOYMENT_URL' in os.environ:
-        return os.environ['DEPLOYMENT_URL']
-    else:
-        # Check if running on Streamlit Cloud
-        if st._is_running_with_streamlit:
-            return "https://trainingcal.streamlit.app"  # Update this to your actual app URL
-        return "http://localhost:8501"
+# Debug: Check if credentials are loaded
+st.write("Debug: Checking Strava credentials")
+st.write(f"Client ID exists: {STRAVA_CLIENT_ID is not None}")
+st.write(f"Client Secret exists: {STRAVA_CLIENT_SECRET is not None}")
 
 # [Your CSS stays the same]
 
 # Simple header
-st.title("Training Cal")
+st.title("Training Calendar")
 
 # Basic Strava authentication
 if 'strava_token' not in st.session_state:
     try:
-        base_url = get_base_url()
-        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri={base_url}&scope=activity:read_all"
+        # Use your specific app URL
+        redirect_uri = "https://trainingcal.streamlit.app"
+        encoded_uri = quote(redirect_uri)
+        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri={encoded_uri}&scope=activity:read_all"
         st.write("Debug: Auth link being used:", auth_link)
         st.markdown(f"[Connect to Strava]({auth_link})")
         
@@ -66,7 +62,8 @@ if 'strava_token' not in st.session_state:
                     'client_id': STRAVA_CLIENT_ID,
                     'client_secret': STRAVA_CLIENT_SECRET,
                     'code': code,
-                    'grant_type': 'authorization_code'
+                    'grant_type': 'authorization_code',
+                    'redirect_uri': redirect_uri
                 },
                 verify=False
             )
