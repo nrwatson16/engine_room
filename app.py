@@ -279,12 +279,25 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-         # Updated date conversions with timezone handling
+        # Add debug logging
+        st.write("Debug: Current timezone:", USER_TIMEZONE)
+        
+        # Show sample of raw data
+        if len(df) > 0:
+            st.write("Debug: Raw timestamp from most recent activity:", df['start_date'].iloc[0])
+        
+        # Updated date conversions with timezone handling and debugging
         df['start_date'] = pd.to_datetime(df['start_date'])
+        st.write("Debug: After pd.to_datetime:", df['start_date'].iloc[0])
+        
         # Convert UTC to local timezone
         df['start_date'] = df['start_date'].dt.tz_localize('UTC').dt.tz_convert(USER_TIMEZONE)
+        st.write("Debug: After timezone conversion:", df['start_date'].iloc[0])
+        
         # Extract local date
         df['date'] = df['start_date'].dt.date
+        st.write("Debug: Final date:", df['date'].iloc[0])
+        
         df['distance_miles'] = df['distance'] / 1609.34
 
         # Group activities by date
