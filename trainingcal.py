@@ -322,167 +322,167 @@ if 'strava_token' in st.session_state:
         df = pd.DataFrame(all_activities)
         
         # Convert distance to miles first
-    df['distance_miles'] = df['distance'] / 1609.34
+        df['distance_miles'] = df['distance'] / 1609.34
 
-    # Convert timestamps to datetime objects
-    df['start_date'] = pd.to_datetime(df['start_date'])
+        # Convert timestamps to datetime objects
+        df['start_date'] = pd.to_datetime(df['start_date'])
 
-    # Convert to Central time and extract date
-    df['start_date'] = df['start_date'].apply(
-        lambda x: x.tz_localize(UTC) if x.tzinfo is None else x
-    ).dt.tz_convert(CENTRAL_TZ)
+        # Convert to Central time and extract date
+        df['start_date'] = df['start_date'].apply(
+            lambda x: x.tz_localize(UTC) if x.tzinfo is None else x
+        ).dt.tz_convert(CENTRAL_TZ)
 
-    # Extract date in Central time based on the local time of activity
-    df['date'] = df.apply(lambda row: 
-        # If activity starts before 3am local time, consider it part of previous day
-        (row['start_date'] - timedelta(days=1)).date() 
-        if row['start_date'].hour < 3 
-        else row['start_date'].date(), 
-        axis=1)
+        # Extract date in Central time based on the local time of activity
+        df['date'] = df.apply(lambda row: 
+            # If activity starts before 3am local time, consider it part of previous day
+            (row['start_date'] - timedelta(days=1)).date() 
+            if row['start_date'].hour < 3 
+            else row['start_date'].date(), 
+            axis=1)
 
-    # Group activities by date
-    activities_by_date = df.groupby('date').apply(
-        lambda x: pd.Series({
-            'activities': sorted([
-                {
-                    'name': row['name'],
-                    'type': row['type'],
-                    'distance': f"{row['distance_miles']:.1f}",
-                    'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None,
-                    'start_time': row['start_date']  # Include start time for sorting
-                }
-                for _, row in x.iterrows()
-            ], key=lambda x: x['start_time'])  # Sort by start time
-        })
-    ).to_dict()['activities']
-    
-    # Create an expander in the sidebar for date selection
-    with st.sidebar.expander("Date Selection", expanded=False):
-        # Year selector
-        current_year = datetime.now().year
-        years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
-        selected_year = st.selectbox(
-            "Select Year",
-            years,
-            index=0  # Default to current year (first in list now)
-        )
-
-        # Month selector
-        current_month = datetime.now().month
+        # Group activities by date
+        activities_by_date = df.groupby('date').apply(
+            lambda x: pd.Series({
+                'activities': sorted([
+                    {
+                        'name': row['name'],
+                        'type': row['type'],
+                        'distance': f"{row['distance_miles']:.1f}",
+                        'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None,
+                        'start_time': row['start_date']  # Include start time for sorting
+                    }
+                    for _, row in x.iterrows()
+                ], key=lambda x: x['start_time'])  # Sort by start time
+            })
+        ).to_dict()['activities']
         
-        # If selected year is current year, only show months up to current month
-        if selected_year == current_year:
-            months = list(range(current_month, 0, -1))
-        else:
-            # For past years, show all months
-            months = list(range(12, 0, -1))
+        # Create an expander in the sidebar for date selection
+        with st.sidebar.expander("Date Selection", expanded=False):
+            # Year selector
+            current_year = datetime.now().year
+            years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
+            selected_year = st.selectbox(
+                "Select Year",
+                years,
+                index=0  # Default to current year (first in list now)
+            )
+
+            # Month selector
+            current_month = datetime.now().month
             
-        month_names = {i: calendar.month_name[i] for i in months}
-        selected_month_num = st.selectbox(
-            "Select Month",
-            months,
-            format_func=lambda x: month_names[x],
-            index=0  # Default to most recent month
-        )
+            # If selected year is current year, only show months up to current month
+            if selected_year == current_year:
+                months = list(range(current_month, 0, -1))
+            else:
+                # For past years, show all months
+                months = list(range(12, 0, -1))
+                
+            month_names = {i: calendar.month_name[i] for i in months}
+            selected_month_num = st.selectbox(
+                "Select Month",
+                months,
+                format_func=lambda x: month_names[x],
+                index=0  # Default to most recent month
+            )
 
-    # Create selected_month datetime object for use in rest of the code
-    selected_month = datetime(selected_year, selected_month_num, 1)
+        # Create selected_month datetime object for use in rest of the code
+        selected_month = datetime(selected_year, selected_month_num, 1)
 
-    # Calculate monthly stats
-    monthly_stats = calculate_monthly_stats(df, selected_month.year, selected_month.month)
+        # Calculate monthly stats
+        monthly_stats = calculate_monthly_stats(df, selected_month.year, selected_month.month)
 
-    # Display header with monthly stats
-    st.markdown(f'''
-        <div class="header-container">
-            <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
-            <div class="monthly-summary">
-                <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
-                <div class="month-metric">⚡ {monthly_stats['power']}W</div>
-                <div class="month-metric">🔥 {monthly_stats['effort']}</div>
+        # Display header with monthly stats
+        st.markdown(f'''
+            <div class="header-container">
+                <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
+                <div class="monthly-summary">
+                    <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
+                    <div class="month-metric">⚡ {monthly_stats['power']}W</div>
+                    <div class="month-metric">🔥 {monthly_stats['effort']}</div>
+                </div>
             </div>
-        </div>
-    ''', unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
 
-# Create calendar
-cal = monthcalendar(selected_month.year, selected_month.month)
-calendar_html = ['<div class="calendar-container">']
+        # Create calendar
+        cal = monthcalendar(selected_month.year, selected_month.month)
+        calendar_html = ['<div class="calendar-container">']
 
-# Week numbers column
-calendar_html.append('<div class="week-numbers">')
-for week in cal:
-    if any(week):
-        valid_days = [day for day in week if day != 0]
-        if valid_days:
-            try:
-                sample_date = datetime(selected_month.year, selected_month.month, valid_days[0])
-                monday_date = sample_date - timedelta(days=sample_date.weekday())
-                week_num = monday_date.isocalendar()[1]
-                calendar_html.append(f'<div class="week-number">W{week_num}</div>')
-            except ValueError:
-                calendar_html.append('<div class="week-number">-</div>')
-calendar_html.append('</div>')
+        # Week numbers column
+        calendar_html.append('<div class="week-numbers">')
+        for week in cal:
+            if any(week):
+                valid_days = [day for day in week if day != 0]
+                if valid_days:
+                    try:
+                        sample_date = datetime(selected_month.year, selected_month.month, valid_days[0])
+                        monday_date = sample_date - timedelta(days=sample_date.weekday())
+                        week_num = monday_date.isocalendar()[1]
+                        calendar_html.append(f'<div class="week-number">W{week_num}</div>')
+                    except ValueError:
+                        calendar_html.append('<div class="week-number">-</div>')
+        calendar_html.append('</div>')
 
-# Calendar content
-calendar_html.append('<div class="calendar-content">')
-calendar_html.append('<div class="calendar-grid">')
+        # Calendar content
+        calendar_html.append('<div class="calendar-content">')
+        calendar_html.append('<div class="calendar-grid">')
 
-# Header row
-calendar_html.append('<div class="calendar-header">')
-for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
-    calendar_html.append(f'<div>{day}</div>')
-calendar_html.append('</div>')
+        # Header row
+        calendar_html.append('<div class="calendar-header">')
+        for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
+            calendar_html.append(f'<div>{day}</div>')
+        calendar_html.append('</div>')
 
-# Wrap calendar weeks in a scrollable container
-calendar_html.append('<div class="calendar-weeks">')
+        # Wrap calendar weeks in a scrollable container
+        calendar_html.append('<div class="calendar-weeks">')
 
-# Calendar weeks
-for week in cal:
-    calendar_html.append('<div class="calendar-week">')
-    for day in week:
-        if day == 0:
-            calendar_html.append('<div class="calendar-day adjacent-day"></div>')
-        else:
-            date = datetime(selected_month.year, selected_month.month, day).date()
-            calendar_html.append(f'<div class="calendar-day">')
-            calendar_html.append(f'<div class="day-number">{day}</div>')
-            
-            if date in activities_by_date:
-                for activity in activities_by_date[date]:
-                    activity_str = ""
-                    if activity['type'] == 'Ride':
-                        activity_str = f"🚲 {activity['distance']}mi"
-                        if activity['watts']:
-                            activity_str += f" ({activity['watts']}W)"
-                    elif activity['type'] == 'Yoga':
-                        activity_str = f"🧘‍♀️ {activity['name']}"
-                    else:
-                        activity_str = f"💪 {activity['name']}"
-                    calendar_html.append(f'<div class="activity">{activity_str}</div>')
-            calendar_html.append('</div>')
-    calendar_html.append('</div>')
-
-calendar_html.append('</div>')  # Close calendar-weeks
-calendar_html.append('</div>')  # Close calendar-grid
-
-# Summary column
-calendar_html.append('<div class="summary-column">')
-for week in cal:
-    if any(week):
-        valid_days = [day for day in week if day != 0]
-        if valid_days:
-            week_start_date = datetime(selected_month.year, selected_month.month, valid_days[0]).date()
-            week_end_date = datetime(selected_month.year, selected_month.month, valid_days[-1]).date()
-            
-            weekly_stats = calculate_weekly_stats(df, week_start_date, week_end_date)
-            calendar_html.append(f'<div class="weekly-summary">')
-            calendar_html.append(f'<div class="summary-metric">🚲 {weekly_stats["miles"]} miles</div>')
-            calendar_html.append(f'<div class="summary-metric">⚡ {weekly_stats["power"]}W avg</div>')
-            calendar_html.append(f'<div class="summary-metric">🔥 {weekly_stats["effort"]} effort</div>')
+        # Calendar weeks
+        for week in cal:
+            calendar_html.append('<div class="calendar-week">')
+            for day in week:
+                if day == 0:
+                    calendar_html.append('<div class="calendar-day adjacent-day"></div>')
+                else:
+                    date = datetime(selected_month.year, selected_month.month, day).date()
+                    calendar_html.append(f'<div class="calendar-day">')
+                    calendar_html.append(f'<div class="day-number">{day}</div>')
+                    
+                    if date in activities_by_date:
+                        for activity in activities_by_date[date]:
+                            activity_str = ""
+                            if activity['type'] == 'Ride':
+                                activity_str = f"🚲 {activity['distance']}mi"
+                                if activity['watts']:
+                                    activity_str += f" ({activity['watts']}W)"
+                            elif activity['type'] == 'Yoga':
+                                activity_str = f"🧘‍♀️ {activity['name']}"
+                            else:
+                                activity_str = f"💪 {activity['name']}"
+                            calendar_html.append(f'<div class="activity">{activity_str}</div>')
+                    calendar_html.append('</div>')
             calendar_html.append('</div>')
 
-calendar_html.append('</div>')  # Close summary column
-calendar_html.append('</div>')  # Close calendar-content
-calendar_html.append('</div>')  # Close calendar-container
+        calendar_html.append('</div>')  # Close calendar-weeks
+        calendar_html.append('</div>')  # Close calendar-grid
 
-# Display the calendar
-st.markdown(''.join(calendar_html), unsafe_allow_html=True)
+        # Summary column
+        calendar_html.append('<div class="summary-column">')
+        for week in cal:
+            if any(week):
+                valid_days = [day for day in week if day != 0]
+                if valid_days:
+                    week_start_date = datetime(selected_month.year, selected_month.month, valid_days[0]).date()
+                    week_end_date = datetime(selected_month.year, selected_month.month, valid_days[-1]).date()
+                    
+                    weekly_stats = calculate_weekly_stats(df, week_start_date, week_end_date)
+                    calendar_html.append(f'<div class="weekly-summary">')
+                    calendar_html.append(f'<div class="summary-metric">🚲 {weekly_stats["miles"]} miles</div>')
+                    calendar_html.append(f'<div class="summary-metric">⚡ {weekly_stats["power"]}W avg</div>')
+                    calendar_html.append(f'<div class="summary-metric">🔥 {weekly_stats["effort"]} effort</div>')
+                    calendar_html.append('</div>')
+
+        calendar_html.append('</div>')  # Close summary column
+        calendar_html.append('</div>')  # Close calendar-content
+        calendar_html.append('</div>')  # Close calendar-container
+
+        # Display the calendar
+        st.markdown(''.join(calendar_html), unsafe_allow_html=True)
