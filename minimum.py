@@ -190,11 +190,13 @@ def calculate_monthly_stats(activities_df, year, month):
 # Strava authentication
 if 'strava_token' not in st.session_state:
     try:
-        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8501&scope=activity:read_all"
+        # Updated scope to include activity:read_all explicitly
+        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8501&scope=read,activity:read_all,profile:read_all"
         st.markdown(f"[Connect to Strava]({auth_link})")
         
         code = st.text_input("Enter the code from the redirect URL:")
         if code:
+            # Get token
             token_response = requests.post(
                 STRAVA_TOKEN_URL,
                 data={
@@ -205,18 +207,59 @@ if 'strava_token' not in st.session_state:
                 },
                 verify=False
             )
+            
+            # Add debug logging
+            st.write("Token Response Status:", token_response.status_code)
+            
             if token_response.ok:
-                st.session_state.strava_token = token_response.json()['access_token']
+                token_data = token_response.json()
+                # Store both access token and refresh token
+                st.session_state.strava_token = token_data['access_token']
+                st.session_state.refresh_token = token_data.get('refresh_token')
+                st.session_state.token_expires_at = token_data.get('expires_at')
                 st.rerun()
             else:
-                st.error(f"Authentication failed: {token_response.text}")
-    except requests.exceptions.RequestException as e:
+                st.error(f"Authentication failed. Response: {token_response.text}")
+                st.error("Please try connecting to Strava again.")
+    except Exception as e:
         st.error(f"Error during authentication: {str(e)}")
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error during authentication: {str(e)}")
+
+# Token refresh function
+def refresh_strava_token():
+    if 'refresh_token' in st.session_state:
+        try:
+            response = requests.post(
+                STRAVA_TOKEN_URL,
+                data={
+                    'client_id': STRAVA_CLIENT_ID,
+                    'client_secret': STRAVA_CLIENT_SECRET,
+                    'refresh_token': st.session_state.refresh_token,
+                    'grant_type': 'refresh_token'
+                },
+                verify=False
+            )
+            
+            if response.ok:
+                token_data = response.json()
+                st.session_state.strava_token = token_data['access_token']
+                st.session_state.refresh_token = token_data['refresh_token']
+                st.session_state.token_expires_at = token_data['expires_at']
+                return True
+        except Exception as e:
+            st.error(f"Error refreshing token: {str(e)}")
+    return False
 
 # Main app
 if 'strava_token' in st.session_state:
+    
+    # Check if token needs refresh
+    current_time = datetime.now().timestamp()
+    if 'token_expires_at' in st.session_state and current_time > st.session_state.token_expires_at:
+        if not refresh_strava_token():
+            st.error("Session expired. Please reconnect to Strava.")
+            st.session_state.pop('strava_token', None)
+            st.rerun()
+    
     try:
         # Set time boundaries
         after_date = datetime(2024, 1, 1)  # Start of 2024
