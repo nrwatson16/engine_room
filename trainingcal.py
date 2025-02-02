@@ -26,7 +26,10 @@ STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 CENTRAL_TZ = pytz.timezone('America/Chicago')
 UTC = pytz.UTC
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 # Custom CSS (Same as before, no changes needed)
 st.markdown("""
