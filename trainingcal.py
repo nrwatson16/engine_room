@@ -321,89 +321,87 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        df = pd.DataFrame(all_activities)
-    
         # Convert distance to miles first
-        df['distance_miles'] = df['distance'] / 1609.34
-    
-        # Convert timestamps to datetime objects
-        df['start_date'] = pd.to_datetime(df['start_date'])
+    df['distance_miles'] = df['distance'] / 1609.34
 
-        # Convert to Central time and extract date
-        df['start_date'] = df['start_date'].apply(
+    # Convert timestamps to datetime objects
+    df['start_date'] = pd.to_datetime(df['start_date'])
+
+    # Convert to Central time and extract date
+    df['start_date'] = df['start_date'].apply(
         lambda x: x.tz_localize(UTC) if x.tzinfo is None else x
-        ).dt.tz_convert(CENTRAL_TZ)
+    ).dt.tz_convert(CENTRAL_TZ)
 
-        # Extract date in Central time based on the local time of activity
-        df['date'] = df.apply(lambda row: 
+    # Extract date in Central time based on the local time of activity
+    df['date'] = df.apply(lambda row: 
         # If activity starts before 3am local time, consider it part of previous day
         (row['start_date'] - timedelta(days=1)).date() 
         if row['start_date'].hour < 3 
         else row['start_date'].date(), 
         axis=1)
+
+    # Group activities by date
+    activities_by_date = df.groupby('date').apply(
+        lambda x: pd.Series({
+            'activities': sorted([
+                {
+                    'name': row['name'],
+                    'type': row['type'],
+                    'distance': f"{row['distance_miles']:.1f}",
+                    'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None,
+                    'start_time': row['start_date']  # Include start time for sorting
+                }
+                for _, row in x.iterrows()
+            ], key=lambda x: x['start_time'])  # Sort by start time
+        })
+    ).to_dict()['activities']
     
-        # Group activities by date
-        activities_by_date = df.groupby('date').apply(
-            lambda x: pd.Series({
-                'activities': sorted([
-                    {
-                        'name': row['name'],
-                        'type': row['type'],
-                        'distance': f"{row['distance_miles']:.1f}",
-                        'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None,
-                        'start_time': row['start_date']  # Include start time for sorting
-                    }
-                    for _, row in x.iterrows()
-                ], key=lambda x: x['start_time'])  # Sort by start time
-            })
-        ).to_dict()['activities']
+    # Create an expander in the sidebar for date selection
+    with st.sidebar.expander("Date Selection", expanded=False):
+        # Year selector
+        current_year = datetime.now().year
+        years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
+        selected_year = st.selectbox(
+            "Select Year",
+            years,
+            index=0  # Default to current year (first in list now)
+        )
+
+        # Month selector
+        current_month = datetime.now().month
         
-        # Create an expander in the sidebar for date selection
-        with st.sidebar.expander("Date Selection", expanded=False):
-            # Year selector
-            current_year = datetime.now().year
-            years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
-            selected_year = st.selectbox(
-                "Select Year",
-                years,
-                index=0  # Default to current year (first in list now)
-            )
-
-            # Month selector
-            current_month = datetime.now().month
+        # If selected year is current year, only show months up to current month
+        if selected_year == current_year:
+            months = list(range(current_month, 0, -1))
+        else:
+            # For past years, show all months
+            months = list(range(12, 0, -1))
             
-            # If selected year is current year, only show months up to current month
-            if selected_year == current_year:
-                months = list(range(current_month, 0, -1))
-            else:
-                # For past years, show all months
-                months = list(range(12, 0, -1))
-                
-            month_names = {i: calendar.month_name[i] for i in months}
-            selected_month_num = st.selectbox(
-                "Select Month",
-                months,
-                format_func=lambda x: month_names[x],
-                index=0  # Default to most recent month
-            )
+        month_names = {i: calendar.month_name[i] for i in months}
+        selected_month_num = st.selectbox(
+            "Select Month",
+            months,
+            format_func=lambda x: month_names[x],
+            index=0  # Default to most recent month
+        )
 
-        # Create selected_month datetime object for use in rest of the code
-        selected_month = datetime(selected_year, selected_month_num, 1)
+    # Create selected_month datetime object for use in rest of the code
+    selected_month = datetime(selected_year, selected_month_num, 1)
 
-        # Calculate monthly stats
-        monthly_stats = calculate_monthly_stats(df, selected_month.year, selected_month.month)
+    # Calculate monthly stats
+    monthly_stats = calculate_monthly_stats(df, selected_month.year, selected_month.month)
 
-        # Display header with monthly stats
-        st.markdown(f'''
-    <div class="header-container">
-        <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
-        <div class="monthly-summary">
-            <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
-            <div class="month-metric">⚡ {monthly_stats['power']}W</div>
-            <div class="month-metric">🔥 {monthly_stats['effort']}</div>
+    # Display header with monthly stats
+    st.markdown(f'''
+        <div class="header-container">
+            <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
+            <div class="monthly-summary">
+                <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
+                <div class="month-metric">⚡ {monthly_stats['power']}W</div>
+                <div class="month-metric">🔥 {monthly_stats['effort']}</div>
+            </div>
         </div>
-    </div>
-''', unsafe_allow_html=True)
+    ''', unsafe_allow_html=True)
 
 # Create calendar
 cal = monthcalendar(selected_month.year, selected_month.month)
