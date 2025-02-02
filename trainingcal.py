@@ -50,11 +50,11 @@ st.markdown("""
         flex-shrink: 0;
     }
     .week-number {
-        height: calc((100vh - 300px) / 6);
+        height: calc((100vh - 300px) / 6);  /* Dynamically size week number height */
         min-height: 80px;
         width: 30px;
         display: flex;
-        align-items: center;  /* This centers content vertically */
+        align-items: center;
         justify-content: center;
         color: #666;
         font-size: 0.85em;
@@ -154,7 +154,7 @@ st.markdown("""
         font-size: 0.9em;
         display: flex;
         flex-direction: column;
-        justify-content: center;  /* This centers content vertically */
+        justify-content: center;
     }
     .summary-metric {
         margin: 4px 0;
