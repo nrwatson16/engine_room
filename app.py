@@ -279,18 +279,10 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Add a debug print to see what we're getting from Strava
-        st.write("First activity start date:", df['start_date'].iloc[0])
-        
-        # Parse the date and subtract 6 hours (for Central Time)
-        df['start_date'] = pd.to_datetime(df['start_date']) - pd.Timedelta(hours=6)
-        
-        # Extract just the date
+        # Simple date conversion - treat everything as Central time
+        df['start_date'] = pd.to_datetime(df['start_date_local'])
         df['date'] = df['start_date'].dt.date
         df['distance_miles'] = df['distance'] / 1609.34
-
-        # Debug print to see what we ended up with
-        st.write("Adjusted date:", df['date'].iloc[0])
 
         # Group activities by date
         activities_by_date = df.groupby('date').apply(
