@@ -269,31 +269,29 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Updated date conversions with timezone handling
+        # Simplified timezone handling - dates are already UTC aware
         df['start_date'] = pd.to_datetime(df['start_date'])
-    # Ensure start_date is treated as UTC
-        df['start_date'] = df['start_date'].dt.tz_localize('UTC')
-    # Convert to user's local timezone
+        # Convert directly to user's local timezone
         df['start_date'] = df['start_date'].dt.tz_convert(USER_TIMEZONE)
-    # Extract date in local timezone
+        # Extract local date
         df['date'] = df['start_date'].dt.date
     
         df['distance_miles'] = df['distance'] / 1609.34
-        
-        # Group activities by date
+    
+        # Group activities by local date
         activities_by_date = df.groupby('date').apply(
-            lambda x: pd.Series({
-                'activities': [
-                    {
-                        'name': row['name'],
-                        'type': row['type'],
-                        'distance': f"{row['distance_miles']:.1f}",
-                        'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None
-                    }
-                    for _, row in x.iterrows()
-                ]
-            })
-        ).to_dict()['activities']
+        lambda x: pd.Series({
+            'activities': [
+                {
+                    'name': row['name'],
+                    'type': row['type'],
+                    'distance': f"{row['distance_miles']:.1f}",
+                    'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None
+                }
+                for _, row in x.iterrows()
+            ]
+        })
+    ).to_dict()['activities']
 
         # Year selector
         current_year = datetime.now().year
