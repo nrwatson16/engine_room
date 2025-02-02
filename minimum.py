@@ -187,7 +187,7 @@ def calculate_monthly_stats(activities_df, year, month):
 # Strava authentication
 if 'strava_token' not in st.session_state:
     try:
-        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8501&scope=activity:read_all"
+        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://trainingcal.streamlit.app"
         st.markdown(f"[Connect to Strava]({auth_link})")
         
         code = st.text_input("Enter the code from the redirect URL:")
