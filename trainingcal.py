@@ -11,7 +11,7 @@ from calendar import monthcalendar, month_name
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_base_url():
-    return "https://trainingcal.streamlit.app"
+    return "https://traincal.streamlit.app"
 
 # Load environment variables
 load_dotenv()
