@@ -18,6 +18,9 @@ STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
+# Get user's timezone - you can modify this if needed
+USER_TIMEZONE = datetime.now().astimezone().tzinfo
+
 st.set_page_config(layout="wide")
 
 # Custom CSS (Same as before, no changes needed)
@@ -187,7 +190,7 @@ def calculate_monthly_stats(activities_df, year, month):
 # Strava authentication
 if 'strava_token' not in st.session_state:
     try:
-        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://trainingcal.streamlit.app"
+        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8501&scope=activity:read_all"
         st.markdown(f"[Connect to Strava]({auth_link})")
         
         code = st.text_input("Enter the code from the redirect URL:")
@@ -253,8 +256,11 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Date conversions
+        # Updated date conversions with timezone handling
         df['start_date'] = pd.to_datetime(df['start_date'])
+        # Convert UTC to local timezone
+        df['start_date'] = df['start_date'].dt.tz_localize('UTC').dt.tz_convert(USER_TIMEZONE)
+        # Extract local date
         df['date'] = df['start_date'].dt.date
         df['distance_miles'] = df['distance'] / 1609.34
 
@@ -404,4 +410,3 @@ if 'strava_token' in st.session_state:
         st.markdown(''.join(calendar_html), unsafe_allow_html=True)
     else:
         st.error(f"Failed to fetch activities: {response.text}")
-
