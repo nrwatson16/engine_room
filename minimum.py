@@ -270,31 +270,30 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Print raw start dates for recent activities
-        print("\nRaw start dates from Strava:")
-        recent_activities = df[['name', 'start_date']].tail(5)
-        print(recent_activities)
+        # Debug output for raw data
+        st.write("Debug - Recent activities before processing:")
+        st.write(df[['name', 'start_date', 'distance']].tail(5))
     
-        # Convert and track each step
+        # First convert distance to miles
+        df['distance_miles'] = df['distance'] / 1609.34
+    
+        # Then handle dates
         df['start_date'] = pd.to_datetime(df['start_date'])
-        print("\nAfter initial conversion:")
-        print(df[['name', 'start_date']].tail(5))
-    
-        # Get the exact timezone being used
-        print(f"\nCurrent timezone being used: {USER_TIMEZONE}")
+        st.write(f"Debug - Current timezone: {USER_TIMEZONE}")
+        st.write("Debug - After initial date conversion:")
+        st.write(df[['name', 'start_date']].tail(5))
     
         # Convert to user's local timezone
         df['start_date'] = df['start_date'].dt.tz_convert(USER_TIMEZONE)
-        print("\nAfter timezone conversion:")
-        print(df[['name', 'start_date']].tail(5))
+        st.write("Debug - After timezone conversion:")
+        st.write(df[['name', 'start_date']].tail(5))
     
-        # Extract date and show both datetime and date
+        # Extract local date
         df['date'] = df['start_date'].dt.date
-        print("\nFinal dates:")
-        print(df[['name', 'start_date', 'date']].tail(5))
-
+        st.write("Debug - Final dates:")
+        st.write(df[['name', 'start_date', 'date']].tail(5))
     
-        # Group activities by local date
+        # Now group activities
         activities_by_date = df.groupby('date').apply(
         lambda x: pd.Series({
             'activities': [
