@@ -30,33 +30,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
-# Custom CSS (Same as before, no changes needed)
+# Custom CSS
 st.markdown("""
     <style>
-    .header-container {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-    .header-container h1 {
-        margin: 0;
-        white-space: nowrap;
-    }
-    .monthly-summary {
-        display: flex;
-        gap: 20px;
-        background-color: white;
-        padding: 12px;
-        border-radius: 4px;
-        font-size: 1.1em;
-    }
-    .month-metric {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
     /* Container adjustments */
     .calendar-container {
         display: flex;
@@ -196,9 +172,32 @@ st.markdown("""
             padding: 2px 4px;
         }
     }
+    /* Header styles */
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .header-container h1 {
+        margin: 0;
+        white-space: nowrap;
+    }
+    .monthly-summary {
+        display: flex;
+        gap: 20px;
+        background-color: white;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 1.1em;
+    }
+    .month-metric {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
     </style>
 """, unsafe_allow_html=True)
-
 def calculate_weekly_stats(activities_df, start_date, end_date):
     """Calculate weekly statistics for the given date range."""
     week_activities = activities_df[
@@ -240,8 +239,6 @@ def calculate_monthly_stats(activities_df, year, month):
         'power': f"{avg_power:.0f}" if avg_power and not pd.isna(avg_power) else "-",
         'effort': f"{total_effort:.0f}" if total_effort and not pd.isna(total_effort) else "-"
     }
-
-
 # Strava authentication
 if 'strava_token' not in st.session_state:
     try:
@@ -279,9 +276,9 @@ if 'strava_token' not in st.session_state:
     except Exception as e:
         st.error(f"Error during authentication: {str(e)}")
         st.markdown("Please try connecting to Strava again.")
+
 # Main app
 if 'strava_token' in st.session_state:
-    
     try:
         # Set time boundaries
         after_date = datetime(2024, 1, 1)  # Start of 2024
@@ -434,8 +431,7 @@ if 'strava_token' in st.session_state:
 
         # Wrap calendar weeks in a scrollable container
         calendar_html.append('<div class="calendar-weeks">')
-
-        # Calendar weeks
+# Calendar weeks
         for week in cal:
             calendar_html.append('<div class="calendar-week">')
             for day in week:
