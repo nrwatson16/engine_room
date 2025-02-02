@@ -22,244 +22,130 @@ STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
-# Get user's timezone
+# Get user's timezone - you can modify this if needed
 CENTRAL_TZ = pytz.timezone('America/Chicago')
 UTC = pytz.UTC
 
-# Configure page for better mobile/tablet viewing
-st.set_page_config(
-    layout="wide",
-    initial_sidebar_state="collapsed"  # Start with sidebar collapsed on iPad
-)
+st.set_page_config(layout="wide")
 
-# Updated CSS with iPad optimizations
+# Custom CSS (Same as before, no changes needed)
 st.markdown("""
     <style>
-    /* Main container styles */
-    .main > div:first-child {
-        padding: 1rem !important;
-    }
-    
     .header-container {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 24px;
-        padding: 0 8px;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
     }
-
     .header-container h1 {
         margin: 0;
-        font-size: 1.75em;
+        white-space: nowrap;
     }
-
     .monthly-summary {
         display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
+        gap: 20px;
         background-color: white;
-        padding: 16px;
-        border-radius: 8px;
-        font-size: 1.2em;
-        width: 100%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 1.1em;
     }
-
     .month-metric {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-        min-width: 120px;
+        gap: 6px;
     }
-
     .calendar-container {
         display: flex;
         align-items: start;
-        padding: 0 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
     }
-
     .week-numbers {
-        display: none;
+        display: grid;
+        margin-right: 8px;
+        margin-top: 52px;
+        background-color: white;
     }
-
+    .week-number {
+        height: 150px;
+        width: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 0.85em;
+        padding: 0;
+        text-align: center;
+    }
     .main-calendar {
         display: flex;
         flex-direction: column;
-        width: 100%;
+        flex-grow: 1;
     }
-
     .calendar-content {
         display: flex;
         align-items: start;
-        width: 100%;
     }
-
     .calendar-grid {
         flex-grow: 1;
         border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 4px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .calendar-header {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         background-color: #f8f9fa;
         border-bottom: 1px solid #ddd;
-        height: 50px;
+        height: 44px;
         align-items: center;
-        font-size: 1.1em;
-        position: sticky;
-        top: 0;
-        z-index: 1;
     }
-
     .summary-column {
-        width: 180px;
-        margin-left: 12px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        overflow: hidden;
+        width: 200px;
+        margin-left: 8px;
+        margin-top: 44px;
     }
-
     .calendar-week {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        min-height: 180px;
+        height: 150px;
     }
-
     .calendar-day {
         padding: 12px;
         border-right: 1px solid #ddd;
         border-bottom: 1px solid #ddd;
-        min-height: 180px;
+        height: 150px;
         overflow-y: auto;
         background-color: white;
-        touch-action: pan-y pinch-zoom;
     }
-
     .adjacent-day {
         background-color: #f8f9fa;
     }
-
     .adjacent-day .day-number {
         color: #999;
     }
-
     .day-number {
         font-weight: bold;
-        margin-bottom: 12px;
-        font-size: 1.2em;
-        color: #333;
+        margin-bottom: 8px;
+        font-size: 1.1em;
     }
-
     .activity {
-        font-size: 1em;
-        margin: 8px 0;
-        padding: 8px 12px;
-        border-radius: 6px;
-        background-color: #f8f9fa;
-        border: 1px solid #eee;
-        touch-action: pan-y;
+        font-size: 0.9em;
+        margin: 4px 0;
+        padding: 4px 8px;
+        border-radius: 3px;
     }
-
     .weekly-summary {
-        height: 180px;
-        padding: 16px;
+        height: 150px;
+        padding: 12px;
         background-color: white;
         border: none;
-        font-size: 1em;
+        font-size: 0.9em;
         margin-bottom: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .summary-metric {
         margin: 4px 0;
-        padding: 8px;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-    }
-
-    /* iPad-specific media queries */
-    @media (max-width: 1024px) {
-        .calendar-container {
-            flex-direction: column;
-        }
-        
-        .summary-column {
-            width: 100%;
-            margin-left: 0;
-            margin-top: 16px;
-        }
-        
-        .weekly-summary {
-            height: auto;
-            padding: 12px;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-around;
-        }
-        
-        .summary-metric {
-            flex: 1;
-            min-width: 150px;
-            text-align: center;
-        }
-        
-        .calendar-day {
-            min-height: 150px;
-        }
-    }
-
-    /* Touch-friendly styles */
-    * {
-        -webkit-tap-highlight-color: rgba(0,0,0,0);
-    }
-
-    .activity:active {
-        background-color: #e9ecef;
-    }
-
-    /* Improve scrolling */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-
-    /* Streamlit-specific overrides for better iPad display */
-    .stSelectbox {
-        min-width: 200px;
-    }
-
-    .stButton button {
-        width: 100%;
-        padding: 0.75rem !important;
-        font-size: 1.1rem !important;
     }
     </style>
 """, unsafe_allow_html=True)
