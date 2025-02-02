@@ -38,20 +38,23 @@ st.markdown("""
         display: flex;
         align-items: start;
         min-height: 0;
-        height: calc(100vh - 200px);  /* Adjust for header space */
+        height: calc(100vh - 200px);
         overflow: hidden;
     }
     /* Week numbers column */
     .week-numbers {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         margin-right: 8px;
         margin-top: 52px;
         background-color: white;
         flex-shrink: 0;
+        overflow-y: auto;
+        height: calc(100vh - 244px);
     }
     .week-number {
-        height: calc((100vh - 300px) / 6);  /* Dynamically size week number height */
-        min-height: 80px;
+        flex: 1;
+        min-height: calc((100vh - 300px) / 6);
         width: 30px;
         display: flex;
         align-items: center;
@@ -98,8 +101,7 @@ st.markdown("""
     .calendar-week {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        min-height: calc((100vh - 300px) / 6);  /* Dynamically calculate week height */
-        min-height: 80px;
+        min-height: calc((100vh - 300px) / 6);
         flex: 1;
     }
     /* Calendar day cell */
@@ -144,10 +146,12 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
+        overflow-y: auto;
+        height: calc(100vh - 244px);
     }
     .weekly-summary {
-        height: calc((100vh - 300px) / 6);
-        min-height: 80px;
+        flex: 1;
+        min-height: calc((100vh - 300px) / 6);
         padding: 8px;
         background-color: white;
         border: none;
@@ -198,6 +202,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
 def calculate_weekly_stats(activities_df, start_date, end_date):
     """Calculate weekly statistics for the given date range."""
     week_activities = activities_df[
