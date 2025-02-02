@@ -294,21 +294,18 @@ if 'strava_token' in st.session_state:
     
         # Group activities by date
         activities_by_date = df.groupby('date').apply(
-        lambda x: pd.Series({
-            'activities': [
-                {
-                    'name': row['name'],
-                    'type': row['type'],
-                    'distance': f"{row['distance_miles']:.1f}",
-                    'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None
-                }
-                for _, row in x.iterrows()
-            ]
-        })
-    ).to_dict()['activities']
-
-        
-        
+    lambda x: pd.Series({
+        'activities': [
+            {
+                'name': row['name'],
+                'type': row['type'],
+                'distance': f"{row['distance_miles']:.1f}",
+                'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None
+            }
+            for _, row in x.iterrows()
+        ]
+    })
+).to_dict()['activities']
         
         # Year selector
         current_year = datetime.now().year
