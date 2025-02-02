@@ -57,42 +57,50 @@ st.markdown("""
         align-items: center;
         gap: 6px;
     }
+    /* Container adjustments */
     .calendar-container {
         display: flex;
         align-items: start;
+        min-height: 0;
+        height: calc(100vh - 200px);  /* Adjust for header space */
+        overflow: hidden;
     }
+    /* Week numbers column */
     .week-numbers {
         display: grid;
         margin-right: 8px;
         margin-top: 52px;
         background-color: white;
+        flex-shrink: 0;
     }
     .week-number {
-        height: 150px;
+        height: calc((100vh - 300px) / 6);  /* Dynamically size week number height */
+        min-height: 80px;
         width: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #666;
         font-size: 0.85em;
-        padding: 0;
-        text-align: center;
     }
-    .main-calendar {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
+    /* Calendar grid improvements */
     .calendar-content {
         display: flex;
-        align-items: start;
+        align-items: stretch;
+        flex: 1;
+        min-height: 0;
+        height: 100%;
     }
     .calendar-grid {
-        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
         border: 1px solid #ddd;
         border-radius: 4px;
         overflow: hidden;
     }
+    /* Header row */
     .calendar-header {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -100,22 +108,31 @@ st.markdown("""
         border-bottom: 1px solid #ddd;
         height: 44px;
         align-items: center;
+        flex-shrink: 0;
     }
-    .summary-column {
-        width: 200px;
-        margin-left: 8px;
-        margin-top: 44px;
+    /* Calendar weeks container */
+    .calendar-weeks {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
+    /* Individual week row */
     .calendar-week {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        height: 150px;
+        min-height: calc((100vh - 300px) / 6);  /* Dynamically calculate week height */
+        min-height: 80px;
+        flex: 1;
     }
+    /* Calendar day cell */
     .calendar-day {
-        padding: 12px;
+        padding: 8px;
         border-right: 1px solid #ddd;
         border-bottom: 1px solid #ddd;
-        height: 150px;
+        display: flex;
+        flex-direction: column;
         overflow-y: auto;
         background-color: white;
     }
@@ -125,30 +142,59 @@ st.markdown("""
     .adjacent-day .day-number {
         color: #999;
     }
+    /* Day number styling */
     .day-number {
         font-weight: bold;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         font-size: 1.1em;
+        flex-shrink: 0;
     }
+    /* Activity item */
     .activity {
-        font-size: 0.9em;
-        margin: 4px 0;
-        padding: 4px 8px;
+        font-size: 0.85em;
+        margin: 2px 0;
+        padding: 3px 6px;
         border-radius: 3px;
+        background-color: #f8f9fa;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    /* Summary column */
+    .summary-column {
+        width: 180px;
+        margin-left: 8px;
+        margin-top: 44px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
     }
     .weekly-summary {
-        height: 150px;
-        padding: 12px;
+        height: calc((100vh - 300px) / 6);
+        min-height: 80px;
+        padding: 8px;
         background-color: white;
         border: none;
         font-size: 0.9em;
-        margin-bottom: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     .summary-metric {
         margin: 4px 0;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .summary-column {
+            display: none;  /* Hide summary on small screens */
+        }
+        .week-numbers {
+            display: none;  /* Hide week numbers on small screens */
+        }
+        .activity {
+            font-size: 0.75em;
+            padding: 2px 4px;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -194,6 +240,7 @@ def calculate_monthly_stats(activities_df, year, month):
         'power': f"{avg_power:.0f}" if avg_power and not pd.isna(avg_power) else "-",
         'effort': f"{total_effort:.0f}" if total_effort and not pd.isna(total_effort) else "-"
     }
+
 
 # Strava authentication
 if 'strava_token' not in st.session_state:
@@ -348,103 +395,96 @@ if 'strava_token' in st.session_state:
 
         # Display header with monthly stats
         st.markdown(f'''
-            <div class="header-container">
-                <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
-                <div class="monthly-summary">
-                    <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
-                    <div class="month-metric">⚡ {monthly_stats['power']}W</div>
-                    <div class="month-metric">🔥 {monthly_stats['effort']}</div>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        # Create calendar
-        cal = monthcalendar(selected_month.year, selected_month.month)
-        
-        calendar_html = ['<div class="calendar-container">']
-        
-        # Week numbers column
-        calendar_html.append('<div class="week-numbers">')
-        for week in cal:
-            if any(week):
-                valid_days = [day for day in week if day != 0]
-                if valid_days:
-                    try:
-                        sample_date = datetime(selected_month.year, selected_month.month, valid_days[0])
-                        monday_date = sample_date - timedelta(days=sample_date.weekday())
-                        week_num = monday_date.isocalendar()[1]
-                        calendar_html.append(f'<div class="week-number">W{week_num}</div>')
-                    except ValueError:
-                        calendar_html.append('<div class="week-number">-</div>')
-        calendar_html.append('</div>')
-        
-        # Calendar content
-        calendar_html.append('<div class="calendar-content">')
-        
-        # Main calendar grid
-        calendar_html.append('<div class="calendar-grid">')
-        
-        # Header row
-        calendar_html.append('<div class="calendar-header">')
-        for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
-            calendar_html.append(f'<div class="calendar-day">{day}</div>')
-        calendar_html.append('</div>')
-        
-        # Calendar days
-        for week in cal:
-            calendar_html.append('<div class="calendar-week">')
-            for day in week:
-                if day == 0:
-                    calendar_html.append('<div class="calendar-day adjacent-day"></div>')
-                else:
-                    date = datetime(selected_month.year, selected_month.month, day).date()
-                    calendar_html.append(f'<div class="calendar-day">')
-                    calendar_html.append(f'<div class="day-number">{day}</div>')
-                    
-                    if date in activities_by_date:
-                        for activity in activities_by_date[date]:
-                            activity_str = ""
-                            if activity['type'] == 'Ride':
-                                activity_str = f"🚲 {activity['distance']}mi"
-                                if activity['watts']:
-                                    activity_str += f" ({activity['watts']}W)"
-                            elif activity['type'] == 'Yoga':
-                                activity_str = f"🧘‍♀️ {activity['name']}"
-                            else:
-                                activity_str = f"💪 {activity['name']}"
-                            
-                            # Optionally, you can also display the time
-                            # time_str = activity['start_time'].strftime('%I:%M %p')
-                            # activity_str = f"{time_str} - {activity_str}"
-                            
-                            calendar_html.append(f'<div class="activity">{activity_str}</div>')
-                    calendar_html.append('</div>')
+    <div class="header-container">
+        <h1>{month_name[selected_month.month]} {selected_month.year}</h1>
+        <div class="monthly-summary">
+            <div class="month-metric">🚲 {monthly_stats['miles']} mi</div>
+            <div class="month-metric">⚡ {monthly_stats['power']}W</div>
+            <div class="month-metric">🔥 {monthly_stats['effort']}</div>
+        </div>
+    </div>
+''', unsafe_allow_html=True)
+
+# Create calendar
+cal = monthcalendar(selected_month.year, selected_month.month)
+calendar_html = ['<div class="calendar-container">']
+
+# Week numbers column
+calendar_html.append('<div class="week-numbers">')
+for week in cal:
+    if any(week):
+        valid_days = [day for day in week if day != 0]
+        if valid_days:
+            try:
+                sample_date = datetime(selected_month.year, selected_month.month, valid_days[0])
+                monday_date = sample_date - timedelta(days=sample_date.weekday())
+                week_num = monday_date.isocalendar()[1]
+                calendar_html.append(f'<div class="week-number">W{week_num}</div>')
+            except ValueError:
+                calendar_html.append('<div class="week-number">-</div>')
+calendar_html.append('</div>')
+
+# Calendar content
+calendar_html.append('<div class="calendar-content">')
+calendar_html.append('<div class="calendar-grid">')
+
+# Header row
+calendar_html.append('<div class="calendar-header">')
+for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
+    calendar_html.append(f'<div>{day}</div>')
+calendar_html.append('</div>')
+
+# Wrap calendar weeks in a scrollable container
+calendar_html.append('<div class="calendar-weeks">')
+
+# Calendar weeks
+for week in cal:
+    calendar_html.append('<div class="calendar-week">')
+    for day in week:
+        if day == 0:
+            calendar_html.append('<div class="calendar-day adjacent-day"></div>')
+        else:
+            date = datetime(selected_month.year, selected_month.month, day).date()
+            calendar_html.append(f'<div class="calendar-day">')
+            calendar_html.append(f'<div class="day-number">{day}</div>')
+            
+            if date in activities_by_date:
+                for activity in activities_by_date[date]:
+                    activity_str = ""
+                    if activity['type'] == 'Ride':
+                        activity_str = f"🚲 {activity['distance']}mi"
+                        if activity['watts']:
+                            activity_str += f" ({activity['watts']}W)"
+                    elif activity['type'] == 'Yoga':
+                        activity_str = f"🧘‍♀️ {activity['name']}"
+                    else:
+                        activity_str = f"💪 {activity['name']}"
+                    calendar_html.append(f'<div class="activity">{activity_str}</div>')
             calendar_html.append('</div>')
-        
-        calendar_html.append('</div>')  # Close calendar grid
-        
-        # Summary column
-        calendar_html.append('<div class="summary-column">')
-        for week in cal:
-            if any(week):
-                # Find start and end dates for the week
-                valid_days = [day for day in week if day != 0]
-                if valid_days:
-                    week_start_date = datetime(selected_month.year, selected_month.month, valid_days[0]).date()
-                    week_end_date = datetime(selected_month.year, selected_month.month, valid_days[-1]).date()
-                    
-                    weekly_stats = calculate_weekly_stats(df, week_start_date, week_end_date)
-                    calendar_html.append(f'<div class="weekly-summary">')
-                    calendar_html.append(f'<div class="summary-metric">🚲 {weekly_stats["miles"]} miles</div>')
-                    calendar_html.append(f'<div class="summary-metric">⚡ {weekly_stats["power"]}W avg</div>')
-                    calendar_html.append(f'<div class="summary-metric">🔥 {weekly_stats["effort"]} effort</div>')
-                    calendar_html.append('</div>')
-        
-        calendar_html.append('</div>')  # Close summary column
-        calendar_html.append('</div>')  # Close calendar content
-        calendar_html.append('</div>')  # Close calendar container
-        
-        # Display the calendar
-        st.markdown(''.join(calendar_html), unsafe_allow_html=True)
-    else:
-        st.error(f"Failed to fetch activities: {response.text}")
+    calendar_html.append('</div>')
+
+calendar_html.append('</div>')  # Close calendar-weeks
+calendar_html.append('</div>')  # Close calendar-grid
+
+# Summary column
+calendar_html.append('<div class="summary-column">')
+for week in cal:
+    if any(week):
+        valid_days = [day for day in week if day != 0]
+        if valid_days:
+            week_start_date = datetime(selected_month.year, selected_month.month, valid_days[0]).date()
+            week_end_date = datetime(selected_month.year, selected_month.month, valid_days[-1]).date()
+            
+            weekly_stats = calculate_weekly_stats(df, week_start_date, week_end_date)
+            calendar_html.append(f'<div class="weekly-summary">')
+            calendar_html.append(f'<div class="summary-metric">🚲 {weekly_stats["miles"]} miles</div>')
+            calendar_html.append(f'<div class="summary-metric">⚡ {weekly_stats["power"]}W avg</div>')
+            calendar_html.append(f'<div class="summary-metric">🔥 {weekly_stats["effort"]} effort</div>')
+            calendar_html.append('</div>')
+
+calendar_html.append('</div>')  # Close summary column
+calendar_html.append('</div>')  # Close calendar-content
+calendar_html.append('</div>')  # Close calendar-container
+
+# Display the calendar
+st.markdown(''.join(calendar_html), unsafe_allow_html=True)
