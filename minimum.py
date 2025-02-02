@@ -10,13 +10,7 @@ from calendar import monthcalendar, month_name
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_base_url():
-    if 'DEPLOYMENT_URL' in os.environ:
-        return os.environ['DEPLOYMENT_URL']
-    else:
-        # Check if running on Streamlit Cloud
-        if st._is_running_with_streamlit:
-            return "https://trainingcal.streamlit.app"
-        return "http://localhost:8501"
+    return "https://trainingcal.streamlit.app"
 
 # Load environment variables
 load_dotenv()
