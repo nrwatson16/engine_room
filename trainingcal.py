@@ -72,7 +72,8 @@ st.markdown("""
         font-size: 0.9em;
         display: flex;
         flex-direction: column;
-        justify-content: center;  /* Center vertically */
+        justify-content: center;  /* This will center content vertically */
+        gap: 4px;  /* Consistent spacing between metrics */  /* Center vertically */
     }
     
     .summary-metric {
