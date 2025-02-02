@@ -151,6 +151,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
 def calculate_weekly_stats(activities_df, start_date, end_date):
     """Calculate weekly statistics for the given date range."""
     week_activities = activities_df[
