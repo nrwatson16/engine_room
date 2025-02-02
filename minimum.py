@@ -25,6 +25,64 @@ STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
+# Debug: Check if credentials are loaded
+st.write("Debug: Checking Strava credentials")
+st.write(f"Client ID exists: {STRAVA_CLIENT_ID is not None}")
+st.write(f"Client Secret exists: {STRAVA_CLIENT_SECRET is not None}")
+
+# Get the deployment URL dynamically
+def get_base_url():
+    if 'DEPLOYMENT_URL' in os.environ:
+        return os.environ['DEPLOYMENT_URL']
+    else:
+        # Check if running on Streamlit Cloud
+        if st._is_running_with_streamlit:
+            return "https://trainingcal.streamlit.app"  # Update this to your actual app URL
+        return "http://localhost:8501"
+
+# [Your CSS stays the same]
+
+# Simple header
+st.title("Engine Room")
+
+# Basic Strava authentication
+if 'strava_token' not in st.session_state:
+    try:
+        base_url = get_base_url()
+        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri={base_url}&scope=activity:read_all"
+        st.write("Debug: Auth link being used:", auth_link)
+        st.markdown(f"[Connect to Strava]({auth_link})")
+        
+        # Get the code from URL params if present
+        query_params = st.experimental_get_query_params()
+        code = query_params.get("code", [None])[0]
+        
+        # If no code in URL, show input field
+        if not code:
+            code = st.text_input("Enter the code from the redirect URL:")
+        
+        if code:
+            st.write("Debug: Attempting to exchange code for token")
+            token_response = requests.post(
+                STRAVA_TOKEN_URL,
+                data={
+                    'client_id': STRAVA_CLIENT_ID,
+                    'client_secret': STRAVA_CLIENT_SECRET,
+                    'code': code,
+                    'grant_type': 'authorization_code'
+                },
+                verify=False
+            )
+            if token_response.ok:
+                st.session_state.strava_token = token_response.json()['access_token']
+                # Clear URL parameters
+                st.experimental_set_query_params()
+                st.rerun()
+            else:
+                st.error(f"Authentication failed: {token_response.text}")
+                st.write("Debug: Token exchange response:", token_response.text)
+    except Exception as e:
+        st.error(f"Error during authentication: {str(e)}")
 # Add back the CSS
 st.markdown("""
     <style>
