@@ -23,7 +23,7 @@ STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 # Get user's timezone - you can modify this if needed
-USER_TIMEZONE = datetime.now().astimezone().tzinfo
+CENTRAL_TZ = pytz.timezone('America/Chicago')
 
 st.set_page_config(layout="wide")
 
@@ -270,30 +270,17 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Debug output for raw data
-        st.write("Debug - Recent activities before processing:")
-        st.write(df[['name', 'start_date', 'distance']].tail(5))
-    
-        # First convert distance to miles
+        # Convert distance to miles first
         df['distance_miles'] = df['distance'] / 1609.34
     
-        # Then handle dates
-        df['start_date'] = pd.to_datetime(df['start_date'])
-        st.write(f"Debug - Current timezone: {USER_TIMEZONE}")
-        st.write("Debug - After initial date conversion:")
-        st.write(df[['name', 'start_date']].tail(5))
+        # Force Central time interpretation
+        df['start_date'] = pd.to_datetime(df['start_date']).dt.tz_localize(None)  # Strip any timezone info
+        df['start_date'] = df['start_date'].dt.tz_localize(CENTRAL_TZ)  # Force Central time
     
-        # Convert to user's local timezone
-        df['start_date'] = df['start_date'].dt.tz_convert(USER_TIMEZONE)
-        st.write("Debug - After timezone conversion:")
-        st.write(df[['name', 'start_date']].tail(5))
-    
-        # Extract local date
+        # Get the date in Central time
         df['date'] = df['start_date'].dt.date
-        st.write("Debug - Final dates:")
-        st.write(df[['name', 'start_date', 'date']].tail(5))
     
-        # Now group activities
+        # Group activities by date as before
         activities_by_date = df.groupby('date').apply(
         lambda x: pd.Series({
             'activities': [
@@ -307,7 +294,9 @@ if 'strava_token' in st.session_state:
             ]
         })
     ).to_dict()['activities']
-
+        
+        
+        
         # Year selector
         current_year = datetime.now().year
         years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
