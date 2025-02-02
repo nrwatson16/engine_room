@@ -11,7 +11,7 @@ from calendar import monthcalendar, month_name
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_base_url():
-    return "https://traincal.streamlit.app"
+    return "https://trainingcal.streamlit.app"
 
 # Load environment variables
 load_dotenv()
@@ -334,6 +334,37 @@ if 'strava_token' in st.session_state:
             format_func=lambda x: month_names[x],
             index=0  # Default to most recent month
         )
+
+# With this updated version:
+
+        # Create an expander in the sidebar for date selection
+        with st.sidebar.expander("Date Selection", expanded=False):
+            # Year selector
+            current_year = datetime.now().year
+            years = list(range(current_year, 2023, -1))  # Creates descending list from current_year down to 2024
+            selected_year = st.selectbox(
+                "Select Year",
+                years,
+                index=0  # Default to current year (first in list now)
+            )
+
+            # Month selector
+            current_month = datetime.now().month
+            
+            # If selected year is current year, only show months up to current month
+            if selected_year == current_year:
+                months = list(range(current_month, 0, -1))
+            else:
+                # For past years, show all months
+                months = list(range(12, 0, -1))
+                
+            month_names = {i: calendar.month_name[i] for i in months}
+            selected_month_num = st.selectbox(
+                "Select Month",
+                months,
+                format_func=lambda x: month_names[x],
+                index=0  # Default to most recent month
+            )
 
         # Create selected_month datetime object for use in rest of the code
         selected_month = datetime(selected_year, selected_month_num, 1)
