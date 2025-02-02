@@ -271,11 +271,15 @@ if 'strava_token' in st.session_state:
         
         # Updated date conversions with timezone handling
         df['start_date'] = pd.to_datetime(df['start_date'])
-        # Convert UTC to local timezone (no localization needed as dates are already UTC)
+    # Ensure start_date is treated as UTC
+        df['start_date'] = df['start_date'].dt.tz_localize('UTC')
+    # Convert to user's local timezone
         df['start_date'] = df['start_date'].dt.tz_convert(USER_TIMEZONE)
-        # Extract local date
+    # Extract date in local timezone
         df['date'] = df['start_date'].dt.date
+    
         df['distance_miles'] = df['distance'] / 1609.34
+        
         # Group activities by date
         activities_by_date = df.groupby('date').apply(
             lambda x: pd.Series({
