@@ -1,4 +1,6 @@
 import streamlit as st
+# Set page config must be the first Streamlit command
+st.set_page_config(layout="wide")
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
