@@ -25,10 +25,7 @@ STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
-# Debug: Check if credentials are loaded
-st.write("Debug: Checking Strava credentials")
-st.write(f"Client ID exists: {STRAVA_CLIENT_ID is not None}")
-st.write(f"Client Secret exists: {STRAVA_CLIENT_SECRET is not None}")
+
 
 # Get the deployment URL dynamically
 def get_base_url():
@@ -43,7 +40,7 @@ def get_base_url():
 # [Your CSS stays the same]
 
 # Simple header
-st.title("Engine Room")
+st.title("Training Cal")
 
 # Basic Strava authentication
 if 'strava_token' not in st.session_state:
@@ -205,63 +202,3 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Simple header
-st.title("Engine Room")
-
-# Basic Strava authentication
-if 'strava_token' not in st.session_state:
-    try:
-        auth_link = f"{STRAVA_AUTH_URL}?client_id={STRAVA_CLIENT_ID}&response_type=code&redirect_uri=http://localhost:8501&scope=activity:read_all"
-        st.markdown(f"[Connect to Strava]({auth_link})")
-        
-        code = st.text_input("Enter the code from the redirect URL:")
-        if code:
-            token_response = requests.post(
-                STRAVA_TOKEN_URL,
-                data={
-                    'client_id': STRAVA_CLIENT_ID,
-                    'client_secret': STRAVA_CLIENT_SECRET,
-                    'code': code,
-                    'grant_type': 'authorization_code'
-                },
-                verify=False
-            )
-            if token_response.ok:
-                st.session_state.strava_token = token_response.json()['access_token']
-                st.rerun()
-            else:
-                st.error(f"Authentication failed: {token_response.text}")
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error during authentication: {str(e)}")
-
-# If authenticated, show a simple test of the calendar structure
-if 'strava_token' in st.session_state:
-    # Add year and month selectors
-    current_year = datetime.now().year
-    current_month = datetime.now().month
-    
-    # Sidebar selectors
-    selected_year = st.sidebar.selectbox(
-        "Select Year",
-        [current_year, current_year-1],
-        index=0
-    )
-    
-    selected_month_num = st.sidebar.selectbox(
-        "Select Month",
-        range(1, 13),
-        format_func=lambda x: calendar.month_name[x],
-        index=current_month-1
-    )
-    
-    # Display basic calendar structure
-    st.markdown(f'''
-        <div class="header-container">
-            <h1>{month_name[selected_month_num]} {selected_year}</h1>
-            <div class="monthly-summary">
-                <div class="month-metric">🚲 0 mi</div>
-                <div class="month-metric">⚡ 0W</div>
-                <div class="month-metric">🔥 0</div>
-            </div>
-        </div>
-    ''', unsafe_allow_html=True)
