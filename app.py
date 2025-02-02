@@ -7,6 +7,7 @@ import os
 import urllib3
 import calendar
 from calendar import monthcalendar, month_name
+from zoneinfo import ZoneInfo
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Load environment variables
@@ -17,6 +18,11 @@ STRAVA_CLIENT_ID = os.getenv('STRAVA_CLIENT_ID')
 STRAVA_CLIENT_SECRET = os.getenv('STRAVA_CLIENT_SECRET')
 STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
+
+# Get user's timezone - you can modify this if needed
+USER_TIMEZONE = datetime.now().astimezone().tzinfo
+
+st.set_page_config(layout="wide")
 
 # Get the deployment URL dynamically
 def get_base_url():
@@ -273,8 +279,11 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
-        # Date conversions
+         # Updated date conversions with timezone handling
         df['start_date'] = pd.to_datetime(df['start_date'])
+        # Convert UTC to local timezone
+        df['start_date'] = df['start_date'].dt.tz_localize('UTC').dt.tz_convert(USER_TIMEZONE)
+        # Extract local date
         df['date'] = df['start_date'].dt.date
         df['distance_miles'] = df['distance'] / 1609.34
 
