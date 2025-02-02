@@ -294,18 +294,19 @@ if 'strava_token' in st.session_state:
     
         # Group activities by date
         activities_by_date = df.groupby('date').apply(
-    lambda x: pd.Series({
-        'activities': [
-            {
-                'name': row['name'],
-                'type': row['type'],
-                'distance': f"{row['distance_miles']:.1f}",
-                'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None
-            }
-            for _, row in x.iterrows()
-        ]
-    })
-).to_dict()['activities']
+            lambda x: pd.Series({
+                'activities': sorted([
+                    {
+                        'name': row['name'],
+                        'type': row['type'],
+                        'distance': f"{row['distance_miles']:.1f}",
+                        'watts': f"{row['average_watts']:.0f}" if 'average_watts' in row and pd.notnull(row['average_watts']) else None,
+                        'start_time': row['start_date']  # Include start time for sorting
+                    }
+                    for _, row in x.iterrows()
+                ], key=lambda x: x['start_time'])  # Sort by start time
+            })
+        ).to_dict()['activities']
         
         # Year selector
         current_year = datetime.now().year
@@ -406,6 +407,10 @@ if 'strava_token' in st.session_state:
                                 activity_str = f"🧘‍♀️ {activity['name']}"
                             else:
                                 activity_str = f"💪 {activity['name']}"
+                            
+                            # Optionally, you can also display the time
+                            # time_str = activity['start_time'].strftime('%I:%M %p')
+                            # activity_str = f"{time_str} - {activity_str}"
                             
                             calendar_html.append(f'<div class="activity">{activity_str}</div>')
                     calendar_html.append('</div>')
