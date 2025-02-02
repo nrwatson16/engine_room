@@ -24,6 +24,7 @@ STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 # Get user's timezone - you can modify this if needed
 CENTRAL_TZ = pytz.timezone('America/Chicago')
+UTC = pytz.UTC
 
 st.set_page_config(layout="wide")
 
@@ -270,17 +271,23 @@ if 'strava_token' in st.session_state:
     if all_activities:
         df = pd.DataFrame(all_activities)
         
+        df = pd.DataFrame(all_activities)
+    
         # Convert distance to miles first
         df['distance_miles'] = df['distance'] / 1609.34
     
-        # Force Central time interpretation
-        df['start_date'] = pd.to_datetime(df['start_date']).dt.tz_localize(None)  # Strip any timezone info
-        df['start_date'] = df['start_date'].dt.tz_localize(CENTRAL_TZ)  # Force Central time
+        # Convert timestamps to datetime objects
+        df['start_date'] = pd.to_datetime(df['start_date'])
     
-        # Get the date in Central time
+        # Convert to Central time
+        df['start_date'] = df['start_date'].apply(
+        lambda x: x.tz_localize(UTC) if x.tzinfo is None else x
+        ).dt.tz_convert(CENTRAL_TZ)
+    
+        # Extract date in Central time
         df['date'] = df['start_date'].dt.date
     
-        # Group activities by date as before
+        # Group activities by date
         activities_by_date = df.groupby('date').apply(
         lambda x: pd.Series({
             'activities': [
@@ -294,6 +301,7 @@ if 'strava_token' in st.session_state:
             ]
         })
     ).to_dict()['activities']
+
         
         
         
