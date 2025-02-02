@@ -31,9 +31,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 # Custom CSS
-import streamlit as st
-# ... [previous imports remain the same]
-
 st.markdown("""
     <style>
     /* Container adjustments */
@@ -41,22 +38,19 @@ st.markdown("""
         display: flex;
         align-items: start;
         min-height: 0;
-        height: calc(100vh - 200px);
+        height: calc(100vh - 200px);  /* Adjust for header space */
         overflow: hidden;
     }
-    
     /* Week numbers column */
     .week-numbers {
-        display: flex;
-        flex-direction: column;
+        display: grid;
         margin-right: 8px;
         margin-top: 52px;
         background-color: white;
         flex-shrink: 0;
     }
-    
     .week-number {
-        height: calc((100vh - 300px) / 6);
+        height: calc((100vh - 300px) / 6);  /* Dynamically size week number height */
         min-height: 80px;
         width: 30px;
         display: flex;
@@ -65,14 +59,14 @@ st.markdown("""
         color: #666;
         font-size: 0.85em;
     }
-    
     /* Calendar grid improvements */
     .calendar-content {
         display: flex;
+        align-items: stretch;
         flex: 1;
         min-height: 0;
+        height: 100%;
     }
-    
     .calendar-grid {
         display: flex;
         flex-direction: column;
@@ -82,7 +76,6 @@ st.markdown("""
         border-radius: 4px;
         overflow: hidden;
     }
-    
     /* Header row */
     .calendar-header {
         display: grid;
@@ -93,7 +86,6 @@ st.markdown("""
         align-items: center;
         flex-shrink: 0;
     }
-    
     /* Calendar weeks container */
     .calendar-weeks {
         display: flex;
@@ -102,15 +94,14 @@ st.markdown("""
         min-height: 0;
         overflow-y: auto;
     }
-    
     /* Individual week row */
     .calendar-week {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        height: calc((100vh - 300px) / 6);
+        min-height: calc((100vh - 300px) / 6);  /* Dynamically calculate week height */
         min-height: 80px;
+        flex: 1;
     }
-    
     /* Calendar day cell */
     .calendar-day {
         padding: 8px;
@@ -121,37 +112,92 @@ st.markdown("""
         overflow-y: auto;
         background-color: white;
     }
-    
+    .adjacent-day {
+        background-color: #f8f9fa;
+    }
+    .adjacent-day .day-number {
+        color: #999;
+    }
+    /* Day number styling */
+    .day-number {
+        font-weight: bold;
+        margin-bottom: 4px;
+        font-size: 1.1em;
+        flex-shrink: 0;
+    }
+    /* Activity item */
+    .activity {
+        font-size: 0.85em;
+        margin: 2px 0;
+        padding: 3px 6px;
+        border-radius: 3px;
+        background-color: #f8f9fa;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     /* Summary column */
     .summary-column {
         width: 180px;
         margin-left: 8px;
+        margin-top: 44px;
         display: flex;
         flex-direction: column;
-        margin-top: 52px;
         flex-shrink: 0;
-        overflow-y: auto;
     }
-    
     .weekly-summary {
         height: calc((100vh - 300px) / 6);
         min-height: 80px;
         padding: 8px;
         background-color: white;
-        border: 1px solid #ddd;
-        margin-bottom: -1px;
+        border: none;
         font-size: 0.9em;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    
-    /* Keep other styles the same */
-    [... rest of the existing styles ...]
+    .summary-metric {
+        margin: 4px 0;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .summary-column {
+            display: none;  /* Hide summary on small screens */
+        }
+        .week-numbers {
+            display: none;  /* Hide week numbers on small screens */
+        }
+        .activity {
+            font-size: 0.75em;
+            padding: 2px 4px;
+        }
+    }
+    /* Header styles */
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .header-container h1 {
+        margin: 0;
+        white-space: nowrap;
+    }
+    .monthly-summary {
+        display: flex;
+        gap: 20px;
+        background-color: white;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 1.1em;
+    }
+    .month-metric {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
     </style>
 """, unsafe_allow_html=True)
-
-
 def calculate_weekly_stats(activities_df, start_date, end_date):
     """Calculate weekly statistics for the given date range."""
     week_activities = activities_df[
