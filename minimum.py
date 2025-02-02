@@ -278,14 +278,19 @@ if 'strava_token' in st.session_state:
     
         # Convert timestamps to datetime objects
         df['start_date'] = pd.to_datetime(df['start_date'])
-    
-        # Convert to Central time
+
+        # Convert to Central time and extract date
         df['start_date'] = df['start_date'].apply(
         lambda x: x.tz_localize(UTC) if x.tzinfo is None else x
         ).dt.tz_convert(CENTRAL_TZ)
-    
-        # Extract date in Central time
-        df['date'] = df['start_date'].dt.date
+
+        # Extract date in Central time based on the local time of activity
+        df['date'] = df.apply(lambda row: 
+        # If activity starts before 3am local time, consider it part of previous day
+        (row['start_date'] - timedelta(days=1)).date() 
+        if row['start_date'].hour < 3 
+        else row['start_date'].date(), 
+        axis=1)
     
         # Group activities by date
         activities_by_date = df.groupby('date').apply(
