@@ -20,7 +20,7 @@ STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 # Get user's timezone - you can modify this if needed
-USER_TIMEZONE = datetime.now().astimezone().tzinfo
+USER_TIMEZONE = ZoneInfo('America/Chicago')
 
 st.set_page_config(layout="wide")
 
